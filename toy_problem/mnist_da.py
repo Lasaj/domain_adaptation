@@ -49,15 +49,38 @@ class NeuralNetwork(nn.Module):
         return logits
 
 
+class Classifier(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.flatten = nn.Flatten()
+        self.linear_relu_stack = nn.Sequential(
+            nn.Linear(1024, 512),
+            nn.ReLU(),
+            nn.Linear(512, 512),
+            nn.ReLU(),
+            nn.Linear(512, 10)
+        )
+
+    def forward(self, x):
+        x = self.flatten(x)
+        logits = self.linear_relu_stack(x)
+        return logits
+
+
 model = NeuralNetwork().to(device)
-model = DenseNet(121).to(device)
 model = torchvision.models.densenet121(weights=DenseNet121_Weights.DEFAULT).to(device)
 model.classifier = nn.Linear(1024, 10).to(device)
+model.classifier = nn.Identity().to(device)
+
+classifier = Classifier().to(device)
+
+
 print(model)
 
 # Optimizer and loss function
 loss_fn = nn.CrossEntropyLoss()
-optimizer = torch.optim.SGD(model.parameters(), lr=1e-3)
+optimizer = torch.optim.SGD(list(model.parameters()) + list(classifier.parameters()), lr=1e-3)
+
 
 def start_logging(model, epochs, model_name, train_batch_size, run_name):
     wandb.login(key="52a8fcda8d59e5f549aebc7b19c0689466f0cc0f")
@@ -70,18 +93,19 @@ def start_logging(model, epochs, model_name, train_batch_size, run_name):
     wandb.watch(model)
 
 
-start_logging(model, "100", "DenseNet121", "64", "MNIST_Test")
+start_logging(model, "100", "DenseNet121", "64", "MNIST_ext_classifier")
 
 
 # Train the model
-def train(dataloader, model, loss_fn, optimizer):
+def train(dataloader, model, classifier, loss_fn, optimizer):
     size = len(dataloader.dataset)
     model.train()
     for batch, (X, y) in enumerate(dataloader):
         X, y = X.to(device), y.to(device)
 
         # Compute prediction error
-        pred = model(X)
+        feats = model(X)
+        pred = classifier(feats)
         loss = loss_fn(pred, y)
 
         # Backpropagation
@@ -96,15 +120,18 @@ def train(dataloader, model, loss_fn, optimizer):
 
 
 # Test the model
-def test(dataloader, model, loss_fn):
+def test(dataloader, model, classifier, loss_fn):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     model.eval()
+    classifier.eval()
+
     test_loss, correct = 0, 0
     with torch.no_grad():
         for X, y in dataloader:
             X, y = X.to(device), y.to(device)
-            pred = model(X)
+            feats = model(X)
+            pred = classifier(feats)
             test_loss += loss_fn(pred, y).item()
             correct += (pred.argmax(1) == y).type(torch.float).sum().item()
     test_loss /= num_batches
@@ -116,8 +143,8 @@ def test(dataloader, model, loss_fn):
 epochs = 5
 for t in range(epochs):
     print(f"Epoch {t + 1}\n-------------------------------")
-    train(train_dataloader, model, loss_fn, optimizer)
-    test(test_dataloader, model, loss_fn)
+    train(train_dataloader, model, classifier, loss_fn, optimizer)
+    test(test_dataloader, model, classifier, loss_fn)
 print("Done!")
 
 classes = [

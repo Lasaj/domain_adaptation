@@ -7,7 +7,7 @@ import covidx
 from torchvision.models import DenseNet, DenseNet121_Weights
 
 
-train_dl, _, test_dl = covidx.get_covidx()
+train_dl, test_dl = covidx.get_source_covidx()
 
 device = ("cuda" if torch.cuda.is_available() else
           "mps" if torch.backends.mps.is_available() else

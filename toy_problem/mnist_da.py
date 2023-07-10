@@ -94,7 +94,7 @@ def start_logging(model, epochs, model_name, train_batch_size, run_name):
     wandb.watch(model)
 
 
-start_logging(model, "100", "DenseNet121", "64", "MNIST_ext_classifier")
+start_logging(model, "100", "DenseNet121", "64", "MNIST_small_classifier")
 
 
 # Train the model

@@ -3,25 +3,11 @@ import torch
 import wandb
 import torch.nn as nn
 import time
-from torch.utils.data import DataLoader
-from torchvision import datasets, transforms
+import covidx
 from torchvision.models import DenseNet, DenseNet121_Weights
 
-mean = [0.485, 0.456, 0.406]
-std = [0.229, 0.224, 0.225]
 
-transforms = transforms.Compose([transforms.Resize((224, 224)),
-                                 transforms.ToTensor(),
-                                 transforms.Lambda(lambda x: x.repeat(3, 1, 1)),
-                                 transforms.Normalize(mean, std),
-                                 ])
-
-train_data = datasets.FashionMNIST(root="data", train=True, download=True, transform=transforms)
-test_data = datasets.FashionMNIST(root="data", train=False, download=True, transform=transforms)
-batch_size = 64
-
-train_dataloader = DataLoader(train_data, batch_size=batch_size)
-test_dataloader = DataLoader(test_data, batch_size=batch_size)
+train_dl, _, test_dl = covidx.get_covidx()
 
 device = ("cuda" if torch.cuda.is_available() else
           "mps" if torch.backends.mps.is_available() else
@@ -31,24 +17,6 @@ print(f"Using {device} device")
 
 
 # Define model
-class NeuralNetwork(nn.Module):
-    def __init__(self):
-        super().__init__()
-        self.flatten = nn.Flatten()
-        self.linear_relu_stack = nn.Sequential(
-            nn.Linear(28 * 28, 512),
-            nn.ReLU(),
-            nn.Linear(512, 512),
-            nn.ReLU(),
-            nn.Linear(512, 10)
-        )
-
-    def forward(self, x):
-        x = self.flatten(x)
-        logits = self.linear_relu_stack(x)
-        return logits
-
-
 class Classifier(nn.Module):
     def __init__(self, num_classes=10):
         super().__init__()
@@ -67,14 +35,9 @@ class Classifier(nn.Module):
         return logits
 
 
-model = NeuralNetwork().to(device)
 model = torchvision.models.densenet121(weights=DenseNet121_Weights.DEFAULT).to(device)
-# model.classifier = nn.Linear(1024, 10).to(device)
 model.classifier = nn.Identity().to(device)
-
 classifier = Classifier().to(device)
-
-
 print(model)
 
 # Optimizer and loss function
@@ -93,7 +56,7 @@ def start_logging(model, epochs, model_name, train_batch_size, run_name):
     wandb.watch(model)
 
 
-start_logging(model, "100", "DenseNet121", "64", "MNIST_small_classifier")
+start_logging(model, "100", "DenseNet121", "64", "covidx")
 
 
 # Train the model
@@ -140,28 +103,17 @@ def test(dataloader, model, classifier, loss_fn):
     wandb.log({"test loss": test_loss, "accuracy": 100 * correct})
 
 
-epochs = 5
+epochs = 100
 for t in range(epochs):
     print(f"Epoch {t + 1}\n-------------------------------")
-    train(train_dataloader, model, classifier, loss_fn, optimizer)
-    test(test_dataloader, model, classifier, loss_fn)
+    train(train_dl, model, classifier, loss_fn, optimizer)
+    test(test_dl, model, classifier, loss_fn)
 print("Done!")
 
-classes = [
-    "T-shirt/top",
-    "Trouser",
-    "Pullover",
-    "Dress",
-    "Coat",
-    "Sandal",
-    "Shirt",
-    "Sneaker",
-    "Bag",
-    "Ankle boot",
-]
+classes = ["covid", "normal", "pneumonia"]
 
 model.eval()
-x, y = test_data[0][0], test_data[0][1]
+x, y = test_dl[0][0], test_dl[0][1]
 with torch.no_grad():
     x = x.to(device)
     pred = model(x)

@@ -69,7 +69,7 @@ def source_only(model, device, train_dl, test_dl, classifier, loss_fn, optimiser
     for t in range(epochs):
         print(f"Epoch {t + 1}\n-------------------------------")
         train(device, train_dl, model, classifier, loss_fn, optimiser)
-        test_loss = test(test_dl, model, classifier, loss_fn)
+        test_loss = test(test_dl, model, device, classifier, loss_fn)
         # early stopping
         if test_loss < best_loss:
             best_loss = test_loss

@@ -48,6 +48,32 @@ def get_source_covidx():
     return train_dataloader, val_dataloader  #, test_dataloader
 
 
+def get_target_covidx():
+    # Load data
+    source_data_len = len(datasets.ImageFolder(root=source_dir, transform=transforms))
+
+    train_data = datasets.ImageFolder(root=target_dir, transform=transforms)
+    orig_train_data = train_data
+    while len(train_data) < source_data_len:
+        train_data += orig_train_data
+
+    # Split data
+    train_size = int(0.85 * len(train_data))
+    val_size = len(train_data) - train_size
+    train_data, val_data = random_split(train_data, [train_size, val_size])
+
+    # train_size = int(len(train_data) - val_size)
+    # train_data, test_data = random_split(train_data, [train_size, val_size])
+
+    # Define dataloaders
+    batch_size = 64
+    train_dataloader = DataLoader(train_data, batch_size=batch_size, shuffle=True)
+    val_dataloader = DataLoader(val_data, batch_size=batch_size, shuffle=True)
+    # test_dataloader = DataLoader(test_data, batch_size=batch_size, shuffle=True)
+
+    return train_dataloader, val_dataloader  #, test_dataloader
+
+
 def split_domains():
     covid_df = pd.read_excel(f"{data_dir}/COVID.metadata.xlsx")
     print(covid_df.URL.value_counts())
@@ -79,7 +105,13 @@ def main():
     # train, val, test = get_covidx()
     # print(len(train), len(val), len(test))
     # print(len(train.dataset), len(val.dataset), len(test.dataset))
-    split_domains()
+    train, test = get_target_covidx()
+    print(len(train), len(test))
+
+    train, test = get_source_covidx()
+    print(len(train), len(test))
+
+    # split_domains()
 
 
 if __name__ == "__main__":

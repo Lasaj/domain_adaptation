@@ -112,14 +112,15 @@ def main():
 
     # Optimizer and loss function
     loss_fn = nn.CrossEntropyLoss()
-    optimizer = torch.optim.SGD(list(model.parameters()) + list(classifier.parameters()), lr=1e-3)
+    # optimiser = torch.optim.SGD(list(model.parameters()) + list(classifier.parameters()), lr=1e-3)
+    optimiser = torch.optim.Adam(list(model.parameters()) + list(classifier.parameters()), lr=1e-3)
 
     epochs = 100
     patience = 10
 
     start_logging(model, epochs, start_time, "DenseNet121", "64", "covidx")
 
-    source_only(model, device, train_dl, test_dl, classifier, loss_fn, optimizer, epochs, patience, start_time)
+    source_only(model, device, train_dl, test_dl, classifier, loss_fn, optimiser, epochs, patience, start_time)
     eval_model(model, device, test_dl)
 
 

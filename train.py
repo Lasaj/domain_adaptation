@@ -117,7 +117,8 @@ for t in range(epochs):
     # early stopping
     if test_loss < best_loss:
         best_loss = test_loss
-        model.save(f"{start_time}_covidx_densenet.pt")
+        # save model weights
+        torch.save(model.state_dict(), f"{start_time}_covidx_densenet_weights.pt")
     else:
         patience -= 1
         if patience == 0:

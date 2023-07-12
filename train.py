@@ -38,11 +38,11 @@ def train_source(device, dataloader, model, classifier, loss_fn, optimiser):
         if batch % 100 == 0:
             loss, current = loss.item(), (batch + 1) * len(X)
             print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-            wandb.log({"training loss": loss})
+            wandb.log({"source training loss": loss})
 
 
 # Test the model
-def test(dataloader, model, device, classifier, loss_fn):
+def test(dataloader, model, device, classifier, loss_fn, type):
     size = len(dataloader.dataset)
     num_batches = len(dataloader)
     model.eval()
@@ -59,7 +59,7 @@ def test(dataloader, model, device, classifier, loss_fn):
     test_loss /= num_batches
     correct /= size
     print(f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
-    wandb.log({"test loss": test_loss, "accuracy": 100 * correct})
+    wandb.log({f"{type} test loss": test_loss, "accuracy": 100 * correct})
     return test_loss
 
 
@@ -69,7 +69,7 @@ def source_only(model, device, train_dl, test_dl, classifier, loss_fn, optimiser
     for t in range(epochs):
         print(f"Epoch {t + 1}\n-------------------------------")
         train_source(device, train_dl, model, classifier, loss_fn, optimiser)
-        test_loss = test(test_dl, model, device, classifier, loss_fn)
+        test_loss = test(test_dl, model, device, classifier, loss_fn, "source")
         # early stopping
         if test_loss < best_loss:
             best_loss = test_loss
@@ -134,9 +134,9 @@ def dann(model, device, source_train_dl, source_test_dl, target_train_dl, target
             if batch % 100 == 0:
                 loss, current = loss.item(), (batch + 1) * len(source_X)
                 print(f"loss: {loss:>7f}  [{current:>5d}/{size:>5d}]")
-                wandb.log({"training loss": loss})
+                wandb.log({"dann training loss": loss})
 
-        test_loss = test(source_test_dl, model, device, classifier, loss_fn)
+        test_loss = test(source_test_dl, model, device, classifier, loss_fn, "dann")
         # early stopping
         if test_loss < best_loss:
             best_loss = test_loss
@@ -183,17 +183,17 @@ def main():
     loss_fn = nn.CrossEntropyLoss()
     # dann_optimiser = torch.optim.SGD(list(model.parameters()) + list(classifier.parameters()) +
     #                             list(discriminator.parameters()), lr=1e-3)
+    source_optimiser = torch.optim.Adam(list(model.parameters()) + list(classifier.parameters()))
     dann_optimiser = torch.optim.Adam(list(model.parameters()) + list(classifier.parameters()) +
-                                     list(discriminator.parameters()))
-    # source_optimiser = torch.optim.Adam(list(model.parameters()) + list(classifier.parameters()), lr=1e-3)
+                                      list(discriminator.parameters()))
 
     epochs = 100
-    patience = 100
+    patience = 10
 
-    start_logging(model, epochs, start_time, "DenseNet121", "64", "dann_adam_w_weight_inc")
+    start_logging(model, epochs, start_time, "DenseNet121", "64", "both_adam_w_weight_inc")
 
-    # source_only(model, device, source_train_dl, source_test_dl, classifier, loss_fn, source_optimiser, epochs, patience,
-    #             start_time)
+    source_only(model, device, source_train_dl, source_test_dl, classifier, loss_fn, source_optimiser, epochs, patience,
+                start_time)
     dann(model, device, source_train_dl, source_test_dl, target_train_dl, target_test_dl, classifier, discriminator,
          loss_fn, dann_optimiser, epochs, patience, start_time)
 

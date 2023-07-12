@@ -186,7 +186,7 @@ def main():
     epochs = 100
     patience = 10
 
-    # start_logging(model, epochs, start_time, "DenseNet121", "64", "covidx_adam")
+    start_logging(model, epochs, start_time, "DenseNet121", "64", "covidx_dann")
 
     # source_only(model, device, source_train_dl, source_test_dl, classifier, loss_fn, optimiser, epochs, patience,
     #             start_time)

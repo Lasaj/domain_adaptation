@@ -120,9 +120,11 @@ def dann(model, device, source_train_dl, source_test_dl, target_train_dl, target
             domain_source_labels = torch.zeros(source_y.shape[0]).type(torch.LongTensor)
             domain_target_labels = torch.ones(target_y.shape[0]).type(torch.LongTensor)
             domain_combined_label = torch.cat((domain_source_labels, domain_target_labels), 0).to(device)
+
+            domain_loss_weight = max(0, (t - 5) / epochs)
             domain_loss = domain_loss_fn(domain_pred, domain_combined_label)
 
-            loss += domain_loss
+            loss += domain_loss * domain_loss_weight
 
             # Backpropagation
             loss.backward()
@@ -186,7 +188,7 @@ def main():
     epochs = 100
     patience = 10
 
-    start_logging(model, epochs, start_time, "DenseNet121", "64", "covidx_dann")
+    start_logging(model, epochs, start_time, "DenseNet121", "64", "dann_linear_inc")
 
     # source_only(model, device, source_train_dl, source_test_dl, classifier, loss_fn, optimiser, epochs, patience,
     #             start_time)

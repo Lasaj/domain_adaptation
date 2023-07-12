@@ -181,19 +181,21 @@ def main():
 
     # Optimizer and loss function
     loss_fn = nn.CrossEntropyLoss()
-    optimiser = torch.optim.SGD(list(model.parameters()) + list(classifier.parameters()) +
-                                list(discriminator.parameters()), lr=1e-3)
-    # optimiser = torch.optim.Adam(list(model.parameters()) + list(classifier.parameters()), lr=1e-3)
+    # dann_optimiser = torch.optim.SGD(list(model.parameters()) + list(classifier.parameters()) +
+    #                             list(discriminator.parameters()), lr=1e-3)
+    dann_optimiser = torch.optim.Adam(list(model.parameters()) + list(classifier.parameters()) +
+                                     list(discriminator.parameters()))
+    # source_optimiser = torch.optim.Adam(list(model.parameters()) + list(classifier.parameters()), lr=1e-3)
 
     epochs = 100
-    patience = 10
+    patience = 100
 
-    start_logging(model, epochs, start_time, "DenseNet121", "64", "dann_linear_inc")
+    start_logging(model, epochs, start_time, "DenseNet121", "64", "dann_adam_w_weight_inc")
 
-    # source_only(model, device, source_train_dl, source_test_dl, classifier, loss_fn, optimiser, epochs, patience,
+    # source_only(model, device, source_train_dl, source_test_dl, classifier, loss_fn, source_optimiser, epochs, patience,
     #             start_time)
     dann(model, device, source_train_dl, source_test_dl, target_train_dl, target_test_dl, classifier, discriminator,
-         loss_fn, optimiser, epochs, patience, start_time)
+         loss_fn, dann_optimiser, epochs, patience, start_time)
 
     wandb.finish()
     eval_model(model, device, source_test_dl)

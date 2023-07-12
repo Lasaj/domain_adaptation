@@ -114,7 +114,8 @@ def dann(model, device, source_train_dl, source_test_dl, target_train_dl, target
             target_X = target_X.to(device)
             target_y = target_y.to(device)
             combined_X = torch.cat((source_X, target_X), 0)
-            domain_pred = discriminator(combined_X, alpha)
+            combined_feats = model(combined_X)
+            domain_pred = discriminator(combined_feats, alpha)
 
             domain_source_labels = torch.zeros(source_y.shape[0]).type(torch.LongTensor)
             domain_target_labels = torch.ones(target_y.shape[0]).type(torch.LongTensor)
@@ -178,19 +179,21 @@ def main():
 
     # Optimizer and loss function
     loss_fn = nn.CrossEntropyLoss()
-    optimiser = torch.optim.SGD(list(model.parameters()) + list(classifier.parameters()), lr=1e-3)
+    optimiser = torch.optim.SGD(list(model.parameters()) + list(classifier.parameters()) +
+                                list(discriminator.parameters()), lr=1e-3)
     # optimiser = torch.optim.Adam(list(model.parameters()) + list(classifier.parameters()), lr=1e-3)
 
     epochs = 100
     patience = 10
 
-    start_logging(model, epochs, start_time, "DenseNet121", "64", "covidx_adam")
+    # start_logging(model, epochs, start_time, "DenseNet121", "64", "covidx_adam")
 
     # source_only(model, device, source_train_dl, source_test_dl, classifier, loss_fn, optimiser, epochs, patience,
     #             start_time)
     dann(model, device, source_train_dl, source_test_dl, target_train_dl, target_test_dl, classifier, discriminator,
          loss_fn, optimiser, epochs, patience, start_time)
 
+    wandb.finish()
     eval_model(model, device, source_test_dl)
 
 

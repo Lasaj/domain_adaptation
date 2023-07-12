@@ -38,7 +38,7 @@ class ReverseLayerF(Function):
 
 
 class Discriminator(nn.Module):
-    def __init__(self, in_features=3 * 28 * 28):
+    def __init__(self, in_features=1024):
         super(Discriminator, self).__init__()
         self.discriminator = nn.Sequential(
             nn.Linear(in_features=in_features, out_features=100),

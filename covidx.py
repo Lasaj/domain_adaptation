@@ -105,13 +105,13 @@ def main():
     # train, val, test = get_covidx()
     # print(len(train), len(val), len(test))
     # print(len(train.dataset), len(val.dataset), len(test.dataset))
-    train, test = get_target_covidx()
-    print(len(train), len(test))
+    # train, test = get_target_covidx()
+    # print(len(train), len(test))
 
-    train, test = get_source_covidx()
-    print(len(train), len(test))
+    # train, test = get_source_covidx()
+    # print(len(train), len(test))
 
-    # split_domains()
+    split_domains()
 
 
 if __name__ == "__main__":

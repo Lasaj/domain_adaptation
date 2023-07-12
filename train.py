@@ -59,7 +59,7 @@ def test(dataloader, model, device, classifier, loss_fn, type):
     test_loss /= num_batches
     correct /= size
     print(f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
-    wandb.log({f"{type} test loss": test_loss, "accuracy": 100 * correct})
+    wandb.log({f"{type} test loss": test_loss, "{type} accuracy": 100 * correct})
     return test_loss
 
 
@@ -181,16 +181,17 @@ def main():
 
     # Optimizer and loss function
     loss_fn = nn.CrossEntropyLoss()
-    # dann_optimiser = torch.optim.SGD(list(model.parameters()) + list(classifier.parameters()) +
-    #                             list(discriminator.parameters()), lr=1e-3)
-    source_optimiser = torch.optim.Adam(list(model.parameters()) + list(classifier.parameters()))
-    dann_optimiser = torch.optim.Adam(list(model.parameters()) + list(classifier.parameters()) +
-                                      list(discriminator.parameters()))
+    source_optimiser = torch.optim.SGD(list(model.parameters()) + list(classifier.parameters()), lr=1e-3)
+    dann_optimiser = torch.optim.SGD(list(model.parameters()) + list(classifier.parameters()) +
+                                     list(discriminator.parameters()), lr=1e-3)
+    # source_optimiser = torch.optim.Adam(list(model.parameters()) + list(classifier.parameters()))
+    # dann_optimiser = torch.optim.Adam(list(model.parameters()) + list(classifier.parameters()) +
+    #                                   list(discriminator.parameters()))
 
     epochs = 100
     patience = 10
 
-    start_logging(model, epochs, start_time, "DenseNet121", "64", "both_adam_w_weight_inc")
+    start_logging(model, epochs, start_time, "DenseNet121", "64", "both_sgd_w_weight_inc")
 
     source_only(model, device, source_train_dl, source_test_dl, classifier, loss_fn, source_optimiser, epochs, patience,
                 start_time)

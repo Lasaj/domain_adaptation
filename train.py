@@ -41,28 +41,6 @@ def train_source(device, dataloader, model, classifier, loss_fn, optimiser):
             wandb.log({"source training loss": loss})
 
 
-# Test the model
-def test(dataloader, model, device, classifier, loss_fn, type):
-    size = len(dataloader.dataset)
-    num_batches = len(dataloader)
-    model.eval()
-    classifier.eval()
-
-    test_loss, correct = 0, 0
-    with torch.no_grad():
-        for X, y in dataloader:
-            X, y = X.to(device), y.to(device)
-            feats = model(X)
-            pred = classifier(feats)
-            test_loss += loss_fn(pred, y).item()
-            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
-    test_loss /= num_batches
-    correct /= size
-    print(f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
-    wandb.log({f"{type} test loss": test_loss, "{type} accuracy": 100 * correct})
-    return test_loss
-
-
 def source_only(model, device, train_dl, test_dl, classifier, loss_fn, optimiser, epochs, patience, start_time):
     best_loss = np.Inf
 
@@ -147,6 +125,29 @@ def dann(model, device, source_train_dl, source_test_dl, target_train_dl, target
             if patience == 0:
                 break
     print("Done!")
+
+
+
+# Test the model
+def test(dataloader, model, device, classifier, loss_fn, type):
+    size = len(dataloader.dataset)
+    num_batches = len(dataloader)
+    model.eval()
+    classifier.eval()
+
+    test_loss, correct = 0, 0
+    with torch.no_grad():
+        for X, y in dataloader:
+            X, y = X.to(device), y.to(device)
+            feats = model(X)
+            pred = classifier(feats)
+            test_loss += loss_fn(pred, y).item()
+            correct += (pred.argmax(1) == y).type(torch.float).sum().item()
+    test_loss /= num_batches
+    correct /= size
+    print(f"Test Error: \n Accuracy: {(100 * correct):>0.1f}%, Avg loss: {test_loss:>8f} \n")
+    wandb.log({f"{type} test loss": test_loss, f"{type} accuracy": 100 * correct})
+    return test_loss
 
 
 def eval_model(model, device, test_dl):
